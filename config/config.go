@@ -26,7 +26,7 @@ type dbConfig struct {
 }
 
 type appConfig struct {
-	PageSize    string
+	PageSize    int
 	TokenSecret string
 }
 type serverConfig struct {

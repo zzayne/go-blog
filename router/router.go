@@ -12,8 +12,8 @@ func Route(router *gin.Engine) {
 	apiPrefix := config.ServerConfig.APIPrefix
 	api := router.Group(apiPrefix)
 	{
-		atricle := new(controller.ArticleController)
-		api.GET("/test", atricle.List)
+		article := new(controller.ArticleController)
+		api.GET("/articles", article.List)
 
 		user := new(controller.UserController)
 		api.POST("/signup", user.SignUp)
