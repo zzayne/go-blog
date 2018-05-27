@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/go-ini/ini"
@@ -11,12 +12,17 @@ var (
 )
 
 type dbConfig struct {
-	Dialect  string
-	User     string
-	Password string
-	Host     string
-	Port     int
-	Name     string
+	Dialect      string
+	Database     string
+	User         string
+	Password     string
+	Host         string
+	Port         int
+	Name         string
+	Charset      string
+	Url          string
+	MaxIdleConns int
+	MaxOpenConns int
 }
 
 type appConfig struct {
@@ -24,9 +30,11 @@ type appConfig struct {
 	TokenSecret string
 }
 type serverConfig struct {
-	Port      int
-	Env       string
-	APIPrefix string
+	Port               int
+	Env                string
+	APIPrefix          string
+	MaxMultipartMemory int
+	PassSalt           string
 }
 
 func init() {
@@ -49,13 +57,16 @@ func loadDBConifg() {
 	if err != nil {
 		log.Fatalf("Fail to load database config: %v", err)
 	}
+	url := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
+		DBConfig.User, DBConfig.Password, DBConfig.Host, DBConfig.Port, DBConfig.Database, DBConfig.Charset)
+	DBConfig.Url = url
 }
 
 //AppConfig 服务内部相关配置
 var AppConfig appConfig
 
 func loadAppConfig() {
-	err := cfg.Section("app").MapTo(&DBConfig)
+	err := cfg.Section("app").MapTo(&AppConfig)
 	if err != nil {
 		log.Fatalf("Fail to load app config: %v", err)
 	}
@@ -65,7 +76,7 @@ func loadAppConfig() {
 var ServerConfig serverConfig
 
 func loadServerConfig() {
-	err := cfg.Section("server").MapTo(&DBConfig)
+	err := cfg.Section("server").MapTo(&ServerConfig)
 	if err != nil {
 		log.Fatalf("Fail to load server config: %v", err)
 	}
