@@ -13,7 +13,7 @@ type ArticleController struct{}
 
 var articleModel model.Article
 
-func (ctrl ArticleController) List(c *gin.Context) {
+func (ctrl *ArticleController) List(c *gin.Context) {
 	var articles []model.Article
 	var err error
 	var pageSize, pageNo int

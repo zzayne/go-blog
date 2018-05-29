@@ -35,21 +35,28 @@ type User struct {
 }
 
 // 根据登录名获得用户
-func (u User) GetUserByName(name string) (user User, err error) {
+func (u *User) GetUserByName(name string) (user User, err error) {
 	err = DB.Where("name = ?", name).First(&user).Error
 	return user, err
 }
 
+func (u *User) GetUserByID(id int) (user User, err error) {
+	err = DB.Where("id = ?", id).First(&user).Error
+	return user, err
+}
+
 // 验证密码是否正确
-func (u User) CheckPassword(password string) (result bool) {
+func (u *User) CheckPassword(password string) (result bool) {
 	if password == "" || u.Pass == "" {
 		return false
 	}
-	return u.EncryptPassword(password, u.Salt()) == u.Pass
+	// 1527607619a6050f23f83933e13294a6652ed5e4ec
+	hash := u.EncryptPassword(password, u.Salt())
+	return hash == u.Pass
 }
 
 // Salt 每个用户都有一个不同的盐
-func (user User) Salt() string {
+func (user *User) Salt() string {
 	var userSalt string
 	if user.Pass == "" {
 		userSalt = strconv.Itoa(int(time.Now().Unix()))
@@ -60,9 +67,17 @@ func (user User) Salt() string {
 }
 
 // EncryptPassword 给密码加密
-func (user User) EncryptPassword(password, salt string) (hash string) {
+func (user *User) EncryptPassword(password, salt string) (hash string) {
 	password = fmt.Sprintf("%x", md5.Sum([]byte(password)))
-	hash = salt + password + config.ServerConfig.PassSalt
+	hash = salt + password + config.AppConfig.PassSalt
 	hash = salt + fmt.Sprintf("%x", md5.Sum([]byte(hash)))
-	return
+	return hash
 }
+
+const (
+	// UserRoleNormal 普通用户
+	UserRoleNormal = 1
+
+	// UserRoleAdmin 管理员
+	UserRoleAdmin = 2
+)

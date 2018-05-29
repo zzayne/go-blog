@@ -28,13 +28,13 @@ type dbConfig struct {
 type appConfig struct {
 	PageSize    int
 	TokenSecret string
+	PassSalt    string
 }
 type serverConfig struct {
 	Port               int
 	Env                string
 	APIPrefix          string
 	MaxMultipartMemory int
-	PassSalt           string
 }
 
 func init() {

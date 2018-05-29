@@ -33,6 +33,16 @@ func FailedMsg(c *gin.Context, msg string) {
 	c.JSON(200, r)
 }
 
+//FailedResults ..
+func FailedResult(c *gin.Context, msg string, code int) {
+	r := model.Result{
+		Code:    code,
+		Success: false,
+		Msg:     msg,
+	}
+	c.JSON(200, r)
+}
+
 //UnauthorizedResult ...
 func Unauthorized(c *gin.Context, msg string) {
 	r := model.Result{
