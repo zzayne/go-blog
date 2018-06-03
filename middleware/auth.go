@@ -13,7 +13,7 @@ import (
 
 func getUser(c *gin.Context) (model.User, error) {
 	var user model.User
-	tokenString := c.Request.Header.Get("Token")
+	tokenString := c.Request.Header.Get("AuthToken")
 
 	if tokenString == "" {
 		return user, errors.New("未登录")

@@ -6,4 +6,5 @@ type Pager struct {
 	PageSize   int    `json:"pageSize"`
 	OrderField string `json:"orderField"`
 	OrderASC   string `json:"orderASC"`
+	
 }

@@ -50,7 +50,7 @@ func (u *User) CheckPassword(password string) (result bool) {
 	if password == "" || u.Pass == "" {
 		return false
 	}
-	// 1527607619a6050f23f83933e13294a6652ed5e4ec
+	// 15276076190ca1b616d7c942b79adcafe06a12355e
 	hash := u.EncryptPassword(password, u.Salt())
 	return hash == u.Pass
 }

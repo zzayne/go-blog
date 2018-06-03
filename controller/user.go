@@ -17,7 +17,7 @@ var userModel model.User
 func (ctrl *UserController) SignIn(c *gin.Context) {
 	type UserForm struct {
 		Name     string `json:"name" binding:"required,min=4,max=20"`
-		Password string `json:"password" binding:"required,min=6,max=20"`
+		Password string `json:"password" binding:"required,min=6,max=40"`
 	}
 	var userForm UserForm
 

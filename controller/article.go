@@ -13,7 +13,14 @@ type ArticleController struct{}
 
 var articleModel model.Article
 
-func (ctrl *ArticleController) List(c *gin.Context) {
+func (ctrl *ArticleController) ClientList(c *gin.Context) {
+	queryList(c, false)
+}
+func (ctrl *ArticleController) AdminList(c *gin.Context) {
+	queryList(c, true)
+}
+
+func queryList(c *gin.Context, isBackend bool) {
 	var articles []model.Article
 	var err error
 	var pageSize, pageNo int
@@ -33,7 +40,7 @@ func (ctrl *ArticleController) List(c *gin.Context) {
 		PageNo:     pageNo,
 		OrderField: "created_at",
 		OrderASC:   "desc",
-	}, false)
+	}, isBackend)
 
 	if err != nil {
 		FailedMsg(c, err.Error())

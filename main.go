@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/zzayne/go-blog/config"
+	"github.com/zzayne/go-blog/middleware"
 	"github.com/zzayne/go-blog/router"
 )
 
@@ -22,6 +23,7 @@ func main() {
 	// Logger middleware will write the logs to gin.DefaultWriter even if you set with GIN_MODE=release.
 	// By default gin.DefaultWriter = os.Stdout
 	app.Use(gin.Logger())
+	app.Use(middleware.CORSMiddleware())
 
 	router.Route(app)
 
