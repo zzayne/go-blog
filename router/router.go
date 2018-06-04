@@ -28,6 +28,8 @@ func Route(router *gin.Engine) {
 	admin := router.Group(apiPrefix+"/admin", middleware.AdminRequired)
 	{
 		admin.GET("/articles", article.AdminList)
+		admin.POST("/article", article.Create)
+		admin.PUT("/article", article.Update)
 
 		admin.GET("/categories", category.List)
 		admin.POST("/category", category.Create)

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -8,14 +9,17 @@ import (
 	"github.com/zzayne/go-blog/model"
 )
 
-//AccountController ...
+// ArticleController ...
 type ArticleController struct{}
 
 var articleModel model.Article
 
+// ClientList 前端文章列表
 func (ctrl *ArticleController) ClientList(c *gin.Context) {
 	queryList(c, false)
 }
+
+// AdminList 管理端文章列表
 func (ctrl *ArticleController) AdminList(c *gin.Context) {
 	queryList(c, true)
 }
@@ -23,7 +27,9 @@ func (ctrl *ArticleController) AdminList(c *gin.Context) {
 func queryList(c *gin.Context, isBackend bool) {
 	var articles []model.Article
 	var err error
-	var pageSize, pageNo int
+	var pageSize, pageNo, cateID int
+	var noContent bool
+
 	pageSize = config.AppConfig.PageSize
 
 	if pageNo, err = strconv.Atoi(c.Query("pageNo")); err != nil {
@@ -35,16 +41,54 @@ func queryList(c *gin.Context, isBackend bool) {
 		pageNo = 1
 	}
 
-	articles, err = articleModel.List(1, model.Pager{
+	if cateID, err = strconv.Atoi(c.Query("categoryID")); err != nil {
+		cateID = 1
+		err = nil
+	}
+
+	var temp = c.Query("noContent")
+
+	noContent = temp == "true"
+
+	articles, err = articleModel.List(cateID, model.Pager{
 		PageSize:   pageSize,
 		PageNo:     pageNo,
 		OrderField: "created_at",
 		OrderASC:   "desc",
-	}, isBackend)
+	}, isBackend, noContent)
 
 	if err != nil {
 		FailedMsg(c, err.Error())
 		return
 	}
 	SuccessData(c, articles)
+}
+
+// Create 创建文章
+func (ctrl *ArticleController) Create(c *gin.Context) {
+	saveArticle(c, false)
+}
+
+// Update 更新文章
+func (ctrl *ArticleController) Update(c *gin.Context) {
+	saveArticle(c, true)
+}
+
+func saveArticle(c *gin.Context, isEdit bool) {
+	var article model.Article
+
+	if err := c.ShouldBindJSON(&article); err != nil {
+		fmt.Println(err.Error())
+		FailedMsg(c, "参数错误")
+		return
+	}
+
+	userInter, _ := c.Get("user")
+	user := userInter.(model.User)
+
+	if err := articleModel.Save(user.ID, article, isEdit); err != nil {
+		FailedMsg(c, err.Error())
+		return
+	}
+	SuccessMsg(c, "保存成功")
 }

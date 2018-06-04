@@ -10,10 +10,12 @@ import (
 	"github.com/zzayne/go-blog/model"
 )
 
+//UserController ...
 type UserController struct{}
 
 var userModel model.User
 
+//SignIn 用户登陆
 func (ctrl *UserController) SignIn(c *gin.Context) {
 	type UserForm struct {
 		Name     string `json:"name" binding:"required,min=4,max=20"`
