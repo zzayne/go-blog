@@ -58,6 +58,7 @@ func (m *Category) Find(id int) (cate Category, err error) {
 	return cate, nil
 }
 
+//Delete ...
 func (m *Category) Delete(id int) error {
 	var cate Category
 	var childrenNum int
@@ -72,9 +73,17 @@ func (m *Category) Delete(id int) error {
 		return errors.New("该类别下存在子类别，无法删除")
 	}
 
-	if err := DB.Delete(&cate).Error; err != nil {
-		return err
-	}
-	return nil
+	err := DB.Delete(&cate).Error
+	return err
 
+}
+
+// TotalCount ...
+func (m *Category) TotalCount() int {
+	return m.getCount("ID>0")
+}
+
+func (m *Category) getCount(maps interface{}) (count int) {
+	DB.Model(&Category{}).Where(maps).Count(&count)
+	return count
 }

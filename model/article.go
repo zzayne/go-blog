@@ -37,6 +37,7 @@ const (
 	ArticleVerifyFail = 3
 )
 
+//List  ...
 func (m *Article) List(cateID int, pager Pager, isBackend, noContent bool) (articles []Article, err error) {
 	var category Category
 	offset := (pager.PageNo - 1) * pager.PageSize
@@ -109,6 +110,45 @@ func (m *Article) List(cateID int, pager Pager, isBackend, noContent bool) (arti
 	return articles, err
 }
 
+// Info ...
+func (m *Article) Info(articleID int, isBackend bool, format string) (article Article, err error) {
+
+	if err = DB.First(&article, articleID).Error; err != nil {
+		return article, errors.New("文章ID错误")
+	}
+	if article.Status == ArticleVerifyFail {
+		return article, errors.New("文章ID错误")
+	}
+
+	if !isBackend {
+		article.BrowseCount++
+		if err := DB.Save(&article).Error; err != nil {
+			return article, err
+		}
+	}
+	if err := DB.Model(&article).Related(&article.User, "users").Error; err != nil {
+		fmt.Println(err.Error())
+		return article, err
+	}
+
+	if err := DB.Model(&article).Related(&article.Categories, "categories").Error; err != nil {
+		fmt.Println(err.Error())
+		return article, err
+	}
+	if format != "md" {
+		if article.ContentType != ContentTypeMarkdown {
+			article.HTMLContent = utils.AvoidXSS(article.HTMLContent)
+		} else {
+			article.HTMLContent = utils.MarkdownToHTML(article.Content)
+		}
+		article.Content = ""
+	}
+
+	return article, nil
+
+}
+
+//Save ...
 func (m *Article) Save(uid uint, article Article, isEdit bool) error {
 
 	var queryArticle Article
@@ -173,6 +213,7 @@ func (m *Article) Save(uid uint, article Article, isEdit bool) error {
 	return saveErr
 }
 
+// TotalCount ...
 func (m *Article) TotalCount() int {
 	return getCount("ID>0")
 }
@@ -181,4 +222,17 @@ func getCount(maps interface{}) (count int) {
 	DB.Model(&Article{}).Where(maps).Count(&count)
 
 	return count
+}
+
+// Delete 删除
+func (m *Article) Delete(id int) error {
+	var article Article
+
+	if err := DB.First(&article, id).Error; err != nil {
+		return errors.New("无效的ID")
+	}
+
+	err := DB.Delete(&article).Error
+	return err
+
 }

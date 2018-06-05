@@ -36,7 +36,8 @@ func (ctl *CategoryController) List(c *gin.Context) {
 		return
 	}
 
-	SuccessData(c, categories)
+	//temp
+	SuccessPageData(c, categories, cateModel.TotalCount())
 }
 
 func (ctl CategoryController) Create(c *gin.Context) {

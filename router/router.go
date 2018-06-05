@@ -22,6 +22,7 @@ func Route(router *gin.Engine) {
 		api.POST("/signin", user.SignIn)
 
 		api.GET("/articles", article.ClientList)
+		api.GET("/article/:id", article.View)
 
 	}
 
@@ -30,6 +31,7 @@ func Route(router *gin.Engine) {
 		admin.GET("/articles", article.AdminList)
 		admin.POST("/article", article.Create)
 		admin.PUT("/article", article.Update)
+		admin.GET("/article/:id", article.Preview)
 
 		admin.GET("/categories", category.List)
 		admin.POST("/category", category.Create)

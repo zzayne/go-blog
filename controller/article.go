@@ -61,7 +61,8 @@ func queryList(c *gin.Context, isBackend bool) {
 		FailedMsg(c, err.Error())
 		return
 	}
-	SuccessData(c, articles)
+	//temp
+	SuccessPageData(c, articles, 5)
 }
 
 // Create 创建文章
@@ -91,4 +92,53 @@ func saveArticle(c *gin.Context, isEdit bool) {
 		return
 	}
 	SuccessMsg(c, "保存成功")
+}
+
+//Preview ...
+func (ctrl *ArticleController) Preview(c *gin.Context) {
+	info(c, true)
+}
+
+//View ...
+func (ctrl *ArticleController) View(c *gin.Context) {
+	info(c, false)
+}
+
+//info 查看内容
+func info(c *gin.Context, isBackend bool) {
+
+	var article model.Article
+	var err error
+	articleID, paramsErr := strconv.Atoi(c.Param("id"))
+
+	if paramsErr != nil {
+		FailedMsg(c, "文章id错误")
+		return
+	}
+
+	format := c.Query("f")
+
+	if article, err = articleModel.Info(articleID, isBackend, format); err != nil {
+		FailedMsg(c, err.Error())
+		return
+	}
+	SuccessData(c, article)
+}
+
+//Delete 删除
+func (ctrl *ArticleController) Delete(c *gin.Context) {
+
+	var delID int
+	var err error
+
+	if delID, err = strconv.Atoi(c.Query("id")); err != nil {
+		FailedMsg(c, "参数错误")
+		return
+	}
+	if err = articleModel.Delete(delID); err != nil {
+		FailedMsg(c, err.Error())
+		return
+	}
+	SuccessMsg(c, "删除成功")
+
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/zzayne/go-blog/model"
 )
 
+//SuccessMsg 成功消息返回
 func SuccessMsg(c *gin.Context, msg string) {
 	r := new(model.Result)
 	r.Msg = msg
@@ -13,6 +14,20 @@ func SuccessMsg(c *gin.Context, msg string) {
 
 	c.JSON(200, r)
 }
+
+//SuccessPageData 带总页码的返回结果
+func SuccessPageData(c *gin.Context, data interface{}, totalCount int) {
+	r := new(model.PageResult)
+	r.Data = data
+	r.Code = model.ErrorCode.SUCCESS
+	r.Success = true
+	r.Msg = "success"
+	r.TotalCount = totalCount
+	c.JSON(200, r)
+
+}
+
+//SuccessData 成功数据返回
 func SuccessData(c *gin.Context, data interface{}) {
 	r := new(model.Result)
 	r.Data = data
@@ -23,7 +38,7 @@ func SuccessData(c *gin.Context, data interface{}) {
 	c.JSON(200, r)
 }
 
-//FailedMsg ...
+//FailedMsg 失败消息返回
 func FailedMsg(c *gin.Context, msg string) {
 	r := model.Result{
 		Code:    model.ErrorCode.ERROR,
@@ -33,7 +48,7 @@ func FailedMsg(c *gin.Context, msg string) {
 	c.JSON(200, r)
 }
 
-//FailedResults ..
+//FailedResult 失败返回对象
 func FailedResult(c *gin.Context, msg string, code int) {
 	r := model.Result{
 		Code:    code,
@@ -43,7 +58,7 @@ func FailedResult(c *gin.Context, msg string, code int) {
 	c.JSON(200, r)
 }
 
-//UnauthorizedResult ...
+//Unauthorized 未授权返回
 func Unauthorized(c *gin.Context, msg string) {
 	r := model.Result{
 		Code:    model.ErrorCode.Unauthorized,
