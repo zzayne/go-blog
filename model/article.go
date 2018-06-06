@@ -15,7 +15,7 @@ type Article struct {
 	CreatedAt   time.Time  `json:"createdAt"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
 	DeletedAt   *time.Time `sql:"index" json:"deletedAt"`
-	Name        string     `json:"name"`
+	Title       string     `json:"title"`
 	Categories  []Category `gorm:"many2many:article_category;ForeignKey:ID;AssociationForeignKey:ID" json:"categories"`
 	BrowseCount uint       `json:"browseCount"`
 	ContentType int        `json:"contentType"`
@@ -38,29 +38,34 @@ const (
 )
 
 //List  ...
-func (m *Article) List(cateID int, pager Pager, isBackend, noContent bool) (articles []Article, err error) {
+func (m *Article) List(cateID int, pager Pager, isBackend, noContent bool, searchTitle string) (total int, articles []Article, err error) {
 	var category Category
+	var totalCountResult struct {
+		totalCount int
+	}
 	offset := (pager.PageNo - 1) * pager.PageSize
 
 	if cateID != 0 {
 
 		if DB.First(&category, cateID).Error != nil {
-			return nil, errors.New("分类ID错误")
+			return 0, nil, errors.New("分类ID错误")
 		}
 
-		var sql = `SELECT distinct(articles.id), articles.name, articles.browse_count, articles.comment_count, articles.collect_count,  
+		var sql = `SELECT distinct(articles.id), articles.title, articles.browse_count, articles.comment_count, articles.collect_count,  
 					articles.status, articles.created_at, articles.updated_at, articles.user_id, articles.last_user_id  
 				FROM articles, article_category  
 				WHERE articles.id = article_category.article_id   
-				{statusSQL}       
+				{statusSQL}
+				AND articles.title like '%{title}%'       
 				AND article_category.category_id = {categoryID} 
-				AND articles.deleted_at IS NULL 
+				AND articles.deleted_at IS NULL 				 
 				ORDER BY {orderField} {orderASC}
 				LIMIT {offset}, {pageSize}`
 		sql = strings.Replace(sql, "{categoryID}", strconv.Itoa(cateID), -1)
 		sql = strings.Replace(sql, "{orderField}", pager.OrderField, -1)
 		sql = strings.Replace(sql, "{orderASC}", pager.OrderASC, -1)
 		sql = strings.Replace(sql, "{offset}", strconv.Itoa(offset), -1)
+		sql = strings.Replace(sql, "{title}", searchTitle, -1)
 		sql = strings.Replace(sql, "{pageSize}", strconv.Itoa(pager.PageSize), -1)
 
 		if isBackend {
@@ -69,28 +74,66 @@ func (m *Article) List(cateID int, pager Pager, isBackend, noContent bool) (arti
 			sql = strings.Replace(sql, "{statusSQL}", " AND (status = 1 OR status = 2)", -1)
 		}
 		if err = DB.Raw(sql).Scan(&articles).Error; err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 		for i := 0; i < len(articles); i++ {
 			articles[i].Categories = []Category{category}
 		}
+
+		countSQL := `SELECT COUNT(distinct(articles.id)) AS total_count 
+		FROM articles, article_category  
+		WHERE articles.id = article_category.article_id   
+		{statusSQL}       
+		AND article_category.category_id = {categoryID}  
+		AND articles.title like '%{title}%'     
+		AND articles.deleted_at IS NULL`
+
+		countSQL = strings.Replace(countSQL, "{categoryID}", strconv.Itoa(cateID), -1)
+		countSQL = strings.Replace(sql, "{title}", searchTitle, -1)
+
+		if isBackend {
+			//管理员查询话题列表时，会返回审核未通过的话题
+			countSQL = strings.Replace(countSQL, "{statusSQL}", " ", -1)
+			if err := DB.Raw(countSQL).Scan(&totalCountResult).Error; err != nil {
+				return 0, articles, err
+			}
+		} else {
+			countSQL = strings.Replace(countSQL, "{statusSQL}", " AND (status = 1 OR status = 2)", -1)
+			if err := DB.Raw(countSQL).Scan(&totalCountResult).Error; err != nil {
+				return 0, articles, err
+			}
+		}
+
 	} else {
 		orderStr := pager.OrderField + " " + pager.OrderASC
 		if isBackend {
 			//管理员查询话题列表时，会返回审核未通过的话题
-			err = DB.Offset(offset).Limit(pager.PageSize).
+			err = DB.Where("title like '%" + searchTitle + "%'").Offset(offset).Limit(pager.PageSize).
 				Order(orderStr).Find(&articles).Error
 		} else {
-			err = DB.Where("status = 1 OR status = 2").Offset(offset).Limit(pager.PageSize).Order(orderStr).Find(&articles).Error
+			err = DB.Where("status = 1 OR status = 2 AND title like '%" + searchTitle + "%'").Offset(offset).Limit(pager.PageSize).Order(orderStr).Find(&articles).Error
 		}
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 
 		for i := 0; i < len(articles); i++ {
 			if err = DB.Model(&articles[i]).Related(&articles[i].Categories, "categories").Error; err != nil {
 				fmt.Println(err.Error())
-				return nil, err
+				return 0, nil, err
+			}
+		}
+		if isBackend {
+			if err := DB.Model(&Article{}).
+				Count(&totalCountResult.totalCount).Error; err != nil {
+
+				return 0, nil, err
+			}
+		} else {
+			if err := DB.Model(&Article{}).Where("status = 1 OR status = 2").
+				Count(&totalCountResult.totalCount).Error; err != nil {
+
+				return 0, nil, err
 			}
 		}
 
@@ -99,7 +142,7 @@ func (m *Article) List(cateID int, pager Pager, isBackend, noContent bool) (arti
 	for i := 0; i < len(articles); i++ {
 		if err := DB.Model(&articles[i]).Related(&articles[i].User, "users").Error; err != nil {
 			fmt.Println(err.Error())
-			return nil, err
+			return 0, nil, err
 		}
 		if noContent {
 			articles[i].Content = ""
@@ -107,7 +150,7 @@ func (m *Article) List(cateID int, pager Pager, isBackend, noContent bool) (arti
 		}
 	}
 
-	return articles, err
+	return totalCountResult.totalCount, articles, err
 }
 
 // Info ...
@@ -163,7 +206,7 @@ func (m *Article) Save(uid uint, article Article, isEdit bool) error {
 	if isEdit {
 		tempArticle := article
 		article = queryArticle
-		article.Name = tempArticle.Name
+		article.Title = tempArticle.Title
 		if article.ContentType == ContentTypeHTML {
 			article.HTMLContent = tempArticle.Content
 		} else {
@@ -176,7 +219,7 @@ func (m *Article) Save(uid uint, article Article, isEdit bool) error {
 		article.ContentType = ContentTypeMarkdown
 	}
 
-	article.Name = strings.TrimSpace(article.Name)
+	article.Title = strings.TrimSpace(article.Title)
 
 	article.Content = strings.TrimSpace(article.Content)
 	article.HTMLContent = strings.TrimSpace(article.HTMLContent)
@@ -185,7 +228,7 @@ func (m *Article) Save(uid uint, article Article, isEdit bool) error {
 		article.HTMLContent = utils.AvoidXSS(article.HTMLContent)
 	}
 
-	if article.Name == "" {
+	if article.Title == "" {
 		return errors.New("文章名称不能为空")
 	}
 
@@ -233,6 +276,27 @@ func (m *Article) Delete(id int) error {
 	}
 
 	err := DB.Delete(&article).Error
+	return err
+
+}
+
+func (m *Article) UpdateStatus(id uint, status int) error {
+
+	var article Article
+	if err := DB.First(&article, id).Error; err != nil {
+
+		return errors.New("无效的文章ID")
+	}
+
+	if status != ArticleVerifying && status != ArticleVerifySuccess && status != ArticleVerifyFail {
+
+		return errors.New("无效的文章状态")
+	}
+
+	article.Status = status
+
+	err := DB.Save(&article).Error
+
 	return err
 
 }

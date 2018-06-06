@@ -32,6 +32,8 @@ func Route(router *gin.Engine) {
 		admin.POST("/article", article.Create)
 		admin.PUT("/article", article.Update)
 		admin.GET("/article/:id", article.Preview)
+		admin.DELETE("/article/:id", article.Delete)
+		admin.PUT("/article/status", article.UpdateStatus)
 
 		admin.GET("/categories", category.List)
 		admin.POST("/category", category.Create)
