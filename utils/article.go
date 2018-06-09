@@ -27,6 +27,7 @@ func MarkdownToHTML(md string) string {
 		blackfriday.EXTENSION_HARD_LINE_BREAK
 
 	renderer := blackfriday.HtmlRenderer(myHTMLFlags, "", "")
+
 	bytes := blackfriday.MarkdownOptions([]byte(md), renderer, blackfriday.Options{
 		Extensions: myExtensions,
 	})
