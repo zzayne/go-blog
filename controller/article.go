@@ -27,8 +27,9 @@ func (ctrl *ArticleController) AdminList(c *gin.Context) {
 func queryList(c *gin.Context, isBackend bool) {
 	var articles []model.Article
 	var err error
-	var pageSize, pageNo, cateID int
+	var pageSize, pageNo, cateID, totalCount int
 	var noContent bool
+	var title string
 
 	pageSize = config.AppConfig.PageSize
 
@@ -49,20 +50,21 @@ func queryList(c *gin.Context, isBackend bool) {
 	var temp = c.Query("noContent")
 
 	noContent = temp == "true"
+	title = c.Query("title")
 
-	articles, err = articleModel.List(cateID, model.Pager{
+	totalCount, articles, err = articleModel.List(cateID, model.Pager{
 		PageSize:   pageSize,
 		PageNo:     pageNo,
 		OrderField: "created_at",
 		OrderASC:   "desc",
-	}, isBackend, noContent)
+	}, isBackend, noContent, title)
 
 	if err != nil {
 		FailedMsg(c, err.Error())
 		return
 	}
 	//temp
-	SuccessPageData(c, articles, 5)
+	SuccessPageData(c, articles, totalCount)
 }
 
 // Create 创建文章
@@ -131,7 +133,7 @@ func (ctrl *ArticleController) Delete(c *gin.Context) {
 	var delID int
 	var err error
 
-	if delID, err = strconv.Atoi(c.Query("id")); err != nil {
+	if delID, err = strconv.Atoi(c.Param("id")); err != nil {
 		FailedMsg(c, "参数错误")
 		return
 	}
@@ -140,5 +142,21 @@ func (ctrl *ArticleController) Delete(c *gin.Context) {
 		return
 	}
 	SuccessMsg(c, "删除成功")
+
+}
+
+//UpdateStatus 更新状态
+func (ctrl *ArticleController) UpdateStatus(c *gin.Context) {
+	var reqData model.Article
+
+	if err := c.ShouldBindJSON(&reqData); err != nil {
+		FailedMsg(c, "无效的id或status")
+		return
+	}
+	if err := articleModel.UpdateStatus(reqData.ID, reqData.Status); err != nil {
+		FailedMsg(c, err.Error())
+		return
+	}
+	SuccessMsg(c, "操作成功")
 
 }
