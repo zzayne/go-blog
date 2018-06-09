@@ -15,7 +15,7 @@ type Article struct {
 	CreatedAt   time.Time  `json:"createdAt"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
 	DeletedAt   *time.Time `sql:"index" json:"deletedAt"`
-	Name        string     `json:"name"`
+	Title       string     `json:"title"`
 	Categories  []Category `gorm:"many2many:article_category;ForeignKey:ID;AssociationForeignKey:ID" json:"categories"`
 	BrowseCount uint       `json:"browseCount"`
 	ContentType int        `json:"contentType"`
@@ -48,7 +48,7 @@ func (m *Article) List(cateID int, pager Pager, isBackend, noContent bool) (arti
 			return nil, errors.New("分类ID错误")
 		}
 
-		var sql = `SELECT distinct(articles.id), articles.name, articles.browse_count, articles.comment_count, articles.collect_count,  
+		var sql = `SELECT distinct(articles.id), articles.title, articles.browse_count, articles.comment_count, articles.collect_count,  
 					articles.status, articles.created_at, articles.updated_at, articles.user_id, articles.last_user_id  
 				FROM articles, article_category  
 				WHERE articles.id = article_category.article_id   
@@ -163,7 +163,7 @@ func (m *Article) Save(uid uint, article Article, isEdit bool) error {
 	if isEdit {
 		tempArticle := article
 		article = queryArticle
-		article.Name = tempArticle.Name
+		article.Title = tempArticle.Title
 		if article.ContentType == ContentTypeHTML {
 			article.HTMLContent = tempArticle.Content
 		} else {
@@ -176,7 +176,7 @@ func (m *Article) Save(uid uint, article Article, isEdit bool) error {
 		article.ContentType = ContentTypeMarkdown
 	}
 
-	article.Name = strings.TrimSpace(article.Name)
+	article.Title = strings.TrimSpace(article.Title)
 
 	article.Content = strings.TrimSpace(article.Content)
 	article.HTMLContent = strings.TrimSpace(article.HTMLContent)
@@ -185,7 +185,7 @@ func (m *Article) Save(uid uint, article Article, isEdit bool) error {
 		article.HTMLContent = utils.AvoidXSS(article.HTMLContent)
 	}
 
-	if article.Name == "" {
+	if article.Title == "" {
 		return errors.New("文章名称不能为空")
 	}
 

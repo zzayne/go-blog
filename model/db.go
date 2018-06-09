@@ -10,7 +10,7 @@ import (
 var DB *gorm.DB
 
 func initDB() {
-	db, err := gorm.Open(config.DBConfig.Dialect, config.DBConfig.Url)
+	db, err := gorm.Open(config.DBConfig.Dialect, config.DBConfig.URL)
 	if err != nil {
 		fmt.Println(err.Error())
 	}

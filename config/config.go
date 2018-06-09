@@ -3,8 +3,11 @@ package config
 import (
 	"fmt"
 	"log"
+	"os"
+	"unicode/utf8"
 
 	"github.com/go-ini/ini"
+	"github.com/zzayne/go-blog/utils"
 )
 
 var (
@@ -20,7 +23,7 @@ type dbConfig struct {
 	Port         int
 	Name         string
 	Charset      string
-	Url          string
+	URL          string
 	MaxIdleConns int
 	MaxOpenConns int
 }
@@ -35,6 +38,8 @@ type serverConfig struct {
 	Env                string
 	APIPrefix          string
 	MaxMultipartMemory int
+	LogDir             string
+	LogFile            string
 }
 
 func init() {
@@ -59,7 +64,7 @@ func loadDBConifg() {
 	}
 	url := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
 		DBConfig.User, DBConfig.Password, DBConfig.Host, DBConfig.Port, DBConfig.Database, DBConfig.Charset)
-	DBConfig.Url = url
+	DBConfig.URL = url
 }
 
 //AppConfig 服务内部相关配置
@@ -80,4 +85,23 @@ func loadServerConfig() {
 	if err != nil {
 		log.Fatalf("Fail to load server config: %v", err)
 	}
+	sep := string(os.PathSeparator)
+	execPath, _ := os.Getwd()
+	length := utf8.RuneCountInString(execPath)
+	lastChar := execPath[length-1:]
+	if lastChar != sep {
+		execPath = execPath + sep
+	}
+	ymdStr := utils.GetTodayYMD("-")
+
+	if ServerConfig.LogDir == "" {
+		ServerConfig.LogDir = execPath
+	} else {
+		length := utf8.RuneCountInString(ServerConfig.LogDir)
+		lastChar := ServerConfig.LogDir[length-1:]
+		if lastChar != sep {
+			ServerConfig.LogDir = ServerConfig.LogDir + sep
+		}
+	}
+	ServerConfig.LogFile = ServerConfig.LogDir + ymdStr + ".log"
 }
