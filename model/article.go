@@ -21,6 +21,7 @@ type Article struct {
 	ContentType int        `json:"contentType"`
 	Content     string     `json:"content"`
 	HTMLContent string     `json:"htmlContent"`
+	Excerpt     string     `json:"excerpt"`
 	Status      int        `json:"status"`
 	UserID      uint       `json:"userID"`
 	User        User       `json:"user"`
@@ -51,7 +52,7 @@ func (m *Article) List(cateID int, pager Pager, isBackend, noContent bool, searc
 			return 0, nil, errors.New("分类ID错误")
 		}
 
-		var sql = `SELECT distinct(articles.id), articles.title, articles.browse_count, articles.comment_count, articles.collect_count,  
+		var sql = `SELECT distinct(articles.id), articles.title,articles.excerpt, articles.browse_count, articles.comment_count, articles.collect_count,  
 					articles.status, articles.created_at, articles.updated_at, articles.user_id, articles.last_user_id  
 				FROM articles, article_category  
 				WHERE articles.id = article_category.article_id   
@@ -220,7 +221,7 @@ func (m *Article) Save(uid uint, article Article, isEdit bool) error {
 	}
 
 	article.Title = strings.TrimSpace(article.Title)
-
+	article.Excerpt = strings.TrimSpace(article.Excerpt)
 	article.Content = strings.TrimSpace(article.Content)
 	article.HTMLContent = strings.TrimSpace(article.HTMLContent)
 
